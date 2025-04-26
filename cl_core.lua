@@ -44,6 +44,34 @@ function LoadModules()
     end
 end
 
+local loadedModules = {}
+
+function ReloadModules()
+    print("^3[Core] Reloading modules...^0")
+
+    -- Folder containing your modules
+    local moduleFolder = "modules/"
+
+    -- Clear previously loaded modules
+    local files = GetModuleFiles(moduleFolder)
+    for _, modulePath in ipairs(files) do
+        package.loaded[modulePath] = nil
+    end
+
+    -- Re-require the modules
+    for _, modulePath in ipairs(files) do
+        local success, result = pcall(require, modulePath)
+        if success then
+            loadedModules[modulePath] = result
+            print("^2[Core] Reloaded: ^0" .. modulePath)
+        else
+            print("^1[Core] Failed to reload " .. modulePath .. ": ^0" .. tostring(result))
+        end
+    end
+
+    print("^3[Core] Module reload complete.^0")
+end
+
 function coreline.RegisterEvent(name, handler, isServerEvent)
     if isServerEvent then
         coreline.serverEvents[name] = handler
