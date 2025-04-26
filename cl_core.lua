@@ -49,16 +49,16 @@ local loadedModules = {}
 function ReloadModules()
     print("^3[Core] Reloading modules...^0")
 
-    -- Folder containing your modules
+
     local moduleFolder = "modules/"
 
-    -- Clear previously loaded modules
+
     local files = GetModuleFiles(moduleFolder)
     for _, modulePath in ipairs(files) do
         package.loaded[modulePath] = nil
     end
 
-    -- Re-require the modules
+
     for _, modulePath in ipairs(files) do
         local success, result = pcall(require, modulePath)
         if success then
