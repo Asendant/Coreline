@@ -1,5 +1,5 @@
-coreline = {} -- Should always use this when working on coreline directly
-cl = coreline -- A shorthand for developers to use.
+coreline = {} -- Namespace for coreline API
+cl = coreline -- Shorthand alias for developers to use
 
 function InitializeCoreline()
     if coreline.ready then return end
@@ -10,8 +10,12 @@ function InitializeCoreline()
     coreline.players = {}
     coreline.clientEvents = {}
     coreline.serverEvents = {}
+    coreline.modules = {}
 
     LoadModules()
+
+    -- First we need to check if coreline is truly ready, but skipping that for now
+    coreline.ready = true
 end
 
 function ParseFileNames(output)
@@ -26,46 +30,53 @@ function ParseFileNames(output)
 end
 
 function LoadModules()
-    local isWindowsMachine = package.config:sub(1,1) == "\\"
-    local currentPath = GetResourcePath(GetCurrentResourceName()) .. "/modules"
-    local command = isWindowsMachine and ('dir /b "%s"'):format(currentPath) or ('ls "%s"'):format(currentPath)
-
-    local handle = io.popen(command)
-    local result = handle:read("*a")
-    handle:close()
-
-    local files = ParseFileNames(result)
+    local moduleFolder = "modules/"
+    local files = GetModuleFiles(moduleFolder)
 
     for _, file in ipairs(files) do
         local modName = file:gsub("%.lua$", "")
         local module = require(("core.modules.%s"):format(modName))
-        cl[modName] = module
+        coreline.modules[modName] = module
         if type(module.init) == "function" then module.init() end
     end
 end
 
-local loadedModules = {}
-
 function ReloadModules()
     print("^3[Core] Reloading modules...^0")
 
-
     local moduleFolder = "modules/"
-
-
     local files = GetModuleFiles(moduleFolder)
-    for _, modulePath in ipairs(files) do
-        package.loaded[modulePath] = nil
+
+    for _, file in ipairs(files) do
+        local modName = file:gsub("%.lua$", "")
+        local existingModule = coreline.modules[modName]
+        if existingModule and type(existingModule.unload) == "function" then
+            local success, err = coreline.SafeExecute(modName, existingModule.unload)
+            if not success then
+                print(("^1[Core] Error unloading module %s: %s^0"):format(modName, tostring(err)))
+            end
+        end
+
+        package.loaded[("core.modules.%s"):format(modName)] = nil
     end
 
+    coreline.modules = {}
 
-    for _, modulePath in ipairs(files) do
-        local success, result = pcall(require, modulePath)
+    for _, file in ipairs(files) do
+        local modName = file:gsub("%.lua$", "")
+        local success, result = coreline.SafeExecute(("Require %s"):format(modName), require, ("core.modules.%s"):format(modName))
         if success then
-            loadedModules[modulePath] = result
-            print("^2[Core] Reloaded: ^0" .. modulePath)
+            coreline.modules[modName] = result
+            print("^2[Core] Reloaded: ^0" .. modName)
+
+            if type(result.init) == "function" then
+                local initSuccess, initErr = coreline.SafeExecute(("Module Initialization %s"):format(modName), result.init)
+                if not initSuccess then
+                    print(("^1[Core] Error in init() of module %s: %s^0"):format(modName, tostring(initErr)))
+                end
+            end
         else
-            print("^1[Core] Failed to reload " .. modulePath .. ": ^0" .. tostring(result))
+            print("^1[Core] Failed to reload " .. modName .. ": ^0" .. tostring(result))
         end
     end
 
@@ -94,4 +105,17 @@ end
 
 if not coreline.ready then
     InitializeCoreline()
+end
+
+-- MOVE THIS FUNCTION TO A HELPER FUNCTION LATER
+function GetModuleFiles(moduleFolder)
+    local isWindowsMachine = package.config:sub(1,1) == "\\"
+    local currentPath = GetResourcePath(GetCurrentResourceName()) .. "/" .. moduleFolder
+    local command = isWindowsMachine and ('dir /b "%s"'):format(currentPath) or ('ls "%s"'):format(currentPath)
+
+    local handle = io.popen(command)
+    local result = handle:read("*a")
+    handle:close()
+
+    return ParseFileNames(result)
 end
