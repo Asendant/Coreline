@@ -8,6 +8,7 @@ function InitializeCoreline()
     coreline.ready = false
     coreline.config = require("cl_config.lua")
     coreline.players = {}
+    coreline.functions = {}
     coreline.clientEvents = {}
     coreline.serverEvents = {}
     coreline.modules = {}
@@ -83,7 +84,7 @@ function ReloadModules()
     print("^3[Core] Module reload complete.^0")
 end
 
-function coreline.RegisterEvent(name, handler, isServerEvent)
+function coreline.functions.RegisterEvent(name, handler, isServerEvent)
     if isServerEvent then
         coreline.serverEvents[name] = handler
         RegisterNetEvent(name)
@@ -96,7 +97,7 @@ function coreline.RegisterEvent(name, handler, isServerEvent)
     end)
 end
 
-function coreline.SafeExecute(name, func, ...)
+function coreline.functions.SafeExecute(name, func, ...)
     local ok, err = pcall(func, ...)
     if not ok then
         print(("^1[ERROR]^0 Event '%s' failed: %s"):format(name, err))
