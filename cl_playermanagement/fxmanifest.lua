@@ -1,17 +1,16 @@
 fx_version "cerulean"
 game "gta5"
 
-author "Ascendant"
+author "Ascendant and Napp"
 description "Coreline Framework Core"
 version "0.0.1-prealpha"
 
 client_scripts {
-    "cl_commands.lua"
-    "cl_config.lua"
+    "/client/cl_playermanagement.lua"
 }
 
-shared_scripts {
-    "cl_core.lua"
+server_scripts {
+    "/server/cl_playermanagement.lua"
 }
 
 lua54 'yes'
