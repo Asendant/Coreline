@@ -1,9 +1,9 @@
-AddEventHandler('playerConnecting', function(playerName, setKickReason, deferrals)
+AddEventHandler('playerJoining', function(playerName, setKickReason, deferrals)
     deferrals.defer()
 
     Citizen.Wait(0)
 
-    local identifiers = GetPlayerIdentifiers(source)
+    local identifiers = GetPlayerIdentifierByType(src, 'license')
     local steamIdentifier = nil
 
     for _, id in ipairs(identifiers) do

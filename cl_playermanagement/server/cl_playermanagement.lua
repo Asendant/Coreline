@@ -1,8 +1,10 @@
 AddEventHandler('playerJoining', function(playerName)
-    local playerSource = source  -- This should be valid now
-    print("Player joining. Source ID: " .. tostring(playerSource))
+    local src = source --@as string
+    local license = GetPlayerIdentifierByType(src, 'license2') or GetPlayerIdentifierByType(src, 'license')
+    if not license then return end
+    print("Player joining. Source ID: " .. tostring(src))
 
-    if not playerSource then
+    if not src then
         print("Error: Invalid source.")  -- Debugging line
         return  -- Skip if invalid source
     end
